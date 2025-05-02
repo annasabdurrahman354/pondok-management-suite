@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+        // Custom colors for our application
+        pondok: {
+          DEFAULT: '#3B82F6', // Primary blue
+          dark: '#1D4ED8',
+          light: '#93C5FD',
+        },
+        status: {
+          diajukan: '#FCD34D', // Yellow
+          revisi: '#F87171', // Red
+          diterima: '#34D399', // Green
+        }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

@@ -1,14 +1,28 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 
 const Index = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-center text-gray-600">Loading...</p>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect based on role
+  if (user?.role === 'admin_pusat') {
+    return <Navigate to="/admin-pusat/dashboard" replace />;
+  } else {
+    return <Navigate to="/admin-pondok/dashboard" replace />;
+  }
 };
 
 export default Index;
