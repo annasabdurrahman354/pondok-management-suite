@@ -13,6 +13,22 @@ interface NotificationPanelProps {
   onClose?: () => void;
 }
 
+// Define getNotificationLink outside of the component so it can be used in renderNotifications
+const getNotificationLink = (notification: Notification): string => {
+  if (!notification.entity_id) return '#';
+
+  switch (notification.type) {
+    case 'pondok':
+      return `/admin-pusat/management/pondok/${notification.entity_id}`;
+    case 'rab':
+      return `/admin-${notification.user_id === 'admin_pusat' ? 'pusat' : 'pondok'}/rab/${notification.entity_id}`;
+    case 'lpj':
+      return `/admin-${notification.user_id === 'admin_pusat' ? 'pusat' : 'pondok'}/lpj/${notification.entity_id}`;
+    default:
+      return '#';
+  }
+};
+
 export function NotificationPanel({ onClose }: NotificationPanelProps) {
   const { notifications, unreadCount, markAsRead, markAllAsRead, loading } = useNotification();
   const [activeTab, setActiveTab] = useState<string>(unreadCount > 0 ? 'unread' : 'all');
@@ -22,21 +38,6 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
       setActiveTab('all');
     }
   }, [unreadCount]);
-
-  const getNotificationLink = (notification: Notification): string => {
-    if (!notification.entity_id) return '#';
-
-    switch (notification.type) {
-      case 'pondok':
-        return `/admin-pusat/management/pondok/${notification.entity_id}`;
-      case 'rab':
-        return `/admin-${notification.user_id === 'admin_pusat' ? 'pusat' : 'pondok'}/rab/${notification.entity_id}`;
-      case 'lpj':
-        return `/admin-${notification.user_id === 'admin_pusat' ? 'pusat' : 'pondok'}/lpj/${notification.entity_id}`;
-      default:
-        return '#';
-    }
-  };
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.is_read) {

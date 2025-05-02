@@ -9,7 +9,301 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      lpj: {
+        Row: {
+          accepted_at: string | null
+          bukti_url: string | null
+          id: string
+          periode_id: string
+          pesan_revisi: string | null
+          pondok_id: string
+          saldo_awal: number | null
+          sisa_saldo: number | null
+          status: string
+          submit_at: string | null
+          total_pemasukan: number | null
+          total_pengeluaran: number | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          bukti_url?: string | null
+          id?: string
+          periode_id: string
+          pesan_revisi?: string | null
+          pondok_id: string
+          saldo_awal?: number | null
+          sisa_saldo?: number | null
+          status?: string
+          submit_at?: string | null
+          total_pemasukan?: number | null
+          total_pengeluaran?: number | null
+        }
+        Update: {
+          accepted_at?: string | null
+          bukti_url?: string | null
+          id?: string
+          periode_id?: string
+          pesan_revisi?: string | null
+          pondok_id?: string
+          saldo_awal?: number | null
+          sisa_saldo?: number | null
+          status?: string
+          submit_at?: string | null
+          total_pemasukan?: number | null
+          total_pengeluaran?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lpj_periode_id_fkey"
+            columns: ["periode_id"]
+            isOneToOne: false
+            referencedRelation: "periode"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lpj_pondok_id_fkey"
+            columns: ["pondok_id"]
+            isOneToOne: false
+            referencedRelation: "pondok"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifikasi: {
+        Row: {
+          created_at: string | null
+          entity_id: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pengurus: {
+        Row: {
+          created_at: string | null
+          id: string
+          jabatan: string
+          name: string
+          phone: string | null
+          pondok_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          jabatan: string
+          name: string
+          phone?: string | null
+          pondok_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          jabatan?: string
+          name?: string
+          phone?: string | null
+          pondok_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pengurus_pondok_id_fkey"
+            columns: ["pondok_id"]
+            isOneToOne: false
+            referencedRelation: "pondok"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      periode: {
+        Row: {
+          created_at: string | null
+          id: string
+          lpj_end: string
+          lpj_start: string
+          month: number
+          rab_end: string
+          rab_start: string
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          lpj_end: string
+          lpj_start: string
+          month: number
+          rab_end: string
+          rab_start: string
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lpj_end?: string
+          lpj_start?: string
+          month?: number
+          rab_end?: string
+          rab_start?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      pondok: {
+        Row: {
+          accepted_at: string | null
+          address: string | null
+          daerah_sambung_id: number | null
+          id: string
+          kecamatan_id: number | null
+          kelurahan_id: number | null
+          kode_pos: string | null
+          kota_id: number | null
+          name: string
+          phone: string | null
+          provinsi_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          address?: string | null
+          daerah_sambung_id?: number | null
+          id?: string
+          kecamatan_id?: number | null
+          kelurahan_id?: number | null
+          kode_pos?: string | null
+          kota_id?: number | null
+          name: string
+          phone?: string | null
+          provinsi_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          address?: string | null
+          daerah_sambung_id?: number | null
+          id?: string
+          kecamatan_id?: number | null
+          kelurahan_id?: number | null
+          kode_pos?: string | null
+          kota_id?: number | null
+          name?: string
+          phone?: string | null
+          provinsi_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          pondok_id: string | null
+          role: string
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          name?: string | null
+          phone?: string | null
+          pondok_id?: string | null
+          role: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          pondok_id?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_pondok_id_fkey"
+            columns: ["pondok_id"]
+            isOneToOne: false
+            referencedRelation: "pondok"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rab: {
+        Row: {
+          accepted_at: string | null
+          bukti_url: string | null
+          id: string
+          periode_id: string
+          pesan_revisi: string | null
+          pondok_id: string
+          saldo_awal: number | null
+          status: string
+          submit_at: string | null
+          total_pemasukan: number | null
+          total_pengeluaran: number | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          bukti_url?: string | null
+          id?: string
+          periode_id: string
+          pesan_revisi?: string | null
+          pondok_id: string
+          saldo_awal?: number | null
+          status?: string
+          submit_at?: string | null
+          total_pemasukan?: number | null
+          total_pengeluaran?: number | null
+        }
+        Update: {
+          accepted_at?: string | null
+          bukti_url?: string | null
+          id?: string
+          periode_id?: string
+          pesan_revisi?: string | null
+          pondok_id?: string
+          saldo_awal?: number | null
+          status?: string
+          submit_at?: string | null
+          total_pemasukan?: number | null
+          total_pengeluaran?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rab_periode_id_fkey"
+            columns: ["periode_id"]
+            isOneToOne: false
+            referencedRelation: "periode"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rab_pondok_id_fkey"
+            columns: ["pondok_id"]
+            isOneToOne: false
+            referencedRelation: "pondok"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
