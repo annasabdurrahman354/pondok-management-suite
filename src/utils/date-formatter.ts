@@ -2,56 +2,67 @@
 import { format, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 
-// Format a date to "dd MMM yyyy" in Indonesian
-export const formatDate = (dateString: string): string => {
+// Format date and time
+export function formatDateTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return '-';
   try {
-    const date = parseISO(dateString);
+    const date = parseISO(dateStr);
+    return format(date, 'dd MMMM yyyy, HH:mm', { locale: id });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateStr;
+  }
+}
+
+// Format date only
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '-';
+  try {
+    const date = parseISO(dateStr);
     return format(date, 'dd MMMM yyyy', { locale: id });
   } catch (error) {
     console.error('Error formatting date:', error);
-    return dateString;
+    return dateStr;
   }
-};
+}
 
-// Format a date to "dd MMM yyyy HH:mm" in Indonesian
-export const formatDateTime = (dateString: string): string => {
+// Format time only
+export function formatTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return '-';
   try {
-    const date = parseISO(dateString);
-    return format(date, 'dd MMMM yyyy HH:mm', { locale: id });
+    const date = parseISO(dateStr);
+    return format(date, 'HH:mm', { locale: id });
   } catch (error) {
-    console.error('Error formatting date and time:', error);
-    return dateString;
+    console.error('Error formatting time:', error);
+    return dateStr;
   }
-};
+}
 
-// Convert periode ID (YYYYMM) to readable format
-export const formatPeriodeId = (periodeId: string): string => {
+// Format to relative time (e.g. "2 hours ago")
+export function formatRelativeTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return '-';
+  
   try {
-    const year = periodeId.substring(0, 4);
-    const month = parseInt(periodeId.substring(4, 6)) - 1; // 0-indexed months
-    const date = new Date(parseInt(year), month, 1);
-    return format(date, 'MMMM yyyy', { locale: id });
+    const date = parseISO(dateStr);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) {
+      return 'baru saja';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} menit yang lalu`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} jam yang lalu`;
+    } else if (diffInSeconds < 604800) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} hari yang lalu`;
+    } else {
+      return formatDate(dateStr);
+    }
   } catch (error) {
-    console.error('Error formatting periode ID:', error);
-    return periodeId;
+    console.error('Error formatting relative time:', error);
+    return dateStr;
   }
-};
-
-// Convert month number to Indonesian month name
-export const getMonthName = (month: number): string => {
-  const date = new Date(2000, month - 1, 1);
-  return format(date, 'MMMM', { locale: id });
-};
-
-// Check if a date is within a range
-export const isDateInRange = (date: Date, startDate: string, endDate: string): boolean => {
-  try {
-    const currentTime = date.getTime();
-    const start = parseISO(startDate).getTime();
-    const end = parseISO(endDate).getTime();
-    return currentTime >= start && currentTime <= end;
-  } catch (error) {
-    console.error('Error checking date range:', error);
-    return false;
-  }
-};
+}

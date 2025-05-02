@@ -1,188 +1,274 @@
 
 import { useEffect, useState } from 'react';
-import { DashboardStats } from '@/components/admin-pusat/dashboard/DashboardStats';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePeriode } from '@/contexts/PeriodeContext';
-import { formatPeriodeId } from '@/utils/date-formatter';
-import { getAllPondok } from '@/services/pondok.service';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { formatCurrency } from '@/utils/currency-formatter';
+import { Link } from 'react-router-dom';
 import { getRABsByPeriodeId } from '@/services/rab.service';
 import { getLPJsByPeriodeId } from '@/services/lpj.service';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { FilePenLine, FileText } from 'lucide-react';
+import { RAB } from '@/types/rab.types';
+import { LPJ } from '@/types/lpj.types';
 import { EmptyState } from '@/components/common/EmptyState';
+import { StatusBadge } from '@/components/common/StatusBadge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-export default function Dashboard() {
-  const { currentPeriode } = usePeriode();
+const AdminPusatDashboard = () => {
+  const { currentPeriode, loading: periodeLoading } = usePeriode();
+  const [rabs, setRABs] = useState<RAB[]>([]);
+  const [lpjs, setLPJs] = useState<LPJ[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    pondokCount: 0,
-    rabSubmitted: 0,
-    rabTotal: 0,
-    lpjSubmitted: 0,
-    lpjTotal: 0,
-    rabAmount: 0,
-    lpjAmount: 0
-  });
-  const [recentRAB, setRecentRAB] = useState<any[]>([]);
-  const [recentLPJ, setRecentLPJ] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('rab');
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const loadData = async () => {
+      if (!currentPeriode) return;
       
+      setLoading(true);
       try {
-        if (currentPeriode) {
-          const [pondoks, rabs, lpjs] = await Promise.all([
-            getAllPondok(),
-            getRABsByPeriodeId(currentPeriode.id),
-            getLPJsByPeriodeId(currentPeriode.id)
-          ]);
-
-          setStats({
-            pondokCount: pondoks.length,
-            rabSubmitted: rabs.length,
-            rabTotal: pondoks.length,
-            lpjSubmitted: lpjs.length,
-            lpjTotal: pondoks.length,
-            rabAmount: rabs.reduce((sum, rab) => sum + (rab.total_pemasukan || 0), 0),
-            lpjAmount: lpjs.reduce((sum, lpj) => sum + (lpj.total_pemasukan || 0), 0)
-          });
-
-          // Get 5 most recent RAB submissions
-          setRecentRAB(
-            rabs
-              .sort((a, b) => new Date(b.submit_at || '').getTime() - new Date(a.submit_at || '').getTime())
-              .slice(0, 5)
-          );
-
-          // Get 5 most recent LPJ submissions
-          setRecentLPJ(
-            lpjs
-              .sort((a, b) => new Date(b.submit_at || '').getTime() - new Date(a.submit_at || '').getTime())
-              .slice(0, 5)
-          );
-        }
+        const [rabsData, lpjsData] = await Promise.all([
+          getRABsByPeriodeId(currentPeriode.id),
+          getLPJsByPeriodeId(currentPeriode.id)
+        ]);
+        
+        setRABs(rabsData);
+        setLPJs(lpjsData);
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error('Error loading dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    if (currentPeriode) {
+      loadData();
+    }
   }, [currentPeriode]);
+
+  // Calculate statistics
+  const getRABStats = () => {
+    if (!rabs.length) return { diajukan: 0, revisi: 0, diterima: 0, total: 0 };
+    
+    return {
+      diajukan: rabs.filter(r => r.status === 'diajukan').length,
+      revisi: rabs.filter(r => r.status === 'revisi').length,
+      diterima: rabs.filter(r => r.status === 'diterima').length,
+      total: rabs.reduce((sum, rab) => sum + (rab.total_pengeluaran || 0), 0)
+    };
+  };
+  
+  const getLPJStats = () => {
+    if (!lpjs.length) return { diajukan: 0, revisi: 0, diterima: 0, total: 0 };
+    
+    return {
+      diajukan: lpjs.filter(l => l.status === 'diajukan').length,
+      revisi: lpjs.filter(l => l.status === 'revisi').length,
+      diterima: lpjs.filter(l => l.status === 'diterima').length,
+      total: lpjs.reduce((sum, lpj) => sum + (lpj.total_pengeluaran || 0), 0)
+    };
+  };
+
+  const rabStats = getRABStats();
+  const lpjStats = getLPJStats();
+
+  if (periodeLoading || loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-pondok" />
+      </div>
+    );
+  }
+
+  if (!currentPeriode) {
+    return (
+      <EmptyState 
+        title="Tidak ada periode aktif" 
+        description="Silahkan buat periode baru terlebih dahulu."
+        icon={AlertCircle}
+        action={
+          <Link to="/admin-pusat/management/periode">
+            <Button>Kelola Periode</Button>
+          </Link>
+        }
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Dashboard Admin Pusat</h1>
-      
-      <DashboardStats 
-        pondokCount={stats.pondokCount}
-        activePeriod={currentPeriode ? formatPeriodeId(currentPeriode.id) : 'Tidak ada periode aktif'}
-        rabSubmitted={stats.rabSubmitted}
-        rabTotal={stats.rabTotal}
-        lpjSubmitted={stats.lpjSubmitted}
-        lpjTotal={stats.lpjTotal}
-        rabAmount={stats.rabAmount}
-        lpjAmount={stats.lpjAmount}
-      />
+      {/* Period Header */}
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard Admin Pusat</h1>
+        <p className="text-muted-foreground">
+          Periode aktif: {currentPeriode.month}/{currentPeriode.year}
+        </p>
+      </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center">
-              <FileText className="h-5 w-5 mr-2" />
-              RAB Terbaru
-            </CardTitle>
-            <CardDescription>
-              {currentPeriode ? formatPeriodeId(currentPeriode.id) : 'Tidak ada periode aktif'}
-            </CardDescription>
+            <CardTitle className="text-sm font-medium">Total RAB Diajukan</CardTitle>
           </CardHeader>
           <CardContent>
-            {recentRAB.length > 0 ? (
-              <div className="space-y-4">
-                {recentRAB.map((rab) => (
-                  <div key={rab.id} className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">{rab.pondok.name}</p>
-                      <div className="flex items-center mt-1">
-                        <div className={`w-2 h-2 rounded-full mr-2 ${
-                          rab.status === 'diajukan' ? 'bg-status-diajukan' : 
-                          rab.status === 'revisi' ? 'bg-status-revisi' : 'bg-status-diterima'
-                        }`}></div>
-                        <p className="text-sm text-muted-foreground">
-                          {rab.status === 'diajukan' ? 'Diajukan' : 
-                          rab.status === 'revisi' ? 'Perlu Revisi' : 'Diterima'}
-                        </p>
-                      </div>
-                    </div>
-                    <Link to={`/admin-pusat/rab/${rab.id}`}>
-                      <Button size="sm" variant="outline">
-                        <FilePenLine className="h-4 w-4 mr-1" />
-                        Review
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="Belum Ada RAB"
-                description="Belum ada pengajuan RAB pada periode ini"
-                icon={<FileText className="h-12 w-12 text-muted-foreground" />}
-              />
-            )}
+            <div className="text-2xl font-bold">{rabStats.diajukan}</div>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center">
-              <FilePenLine className="h-5 w-5 mr-2" />
-              LPJ Terbaru
-            </CardTitle>
-            <CardDescription>
-              {currentPeriode ? formatPeriodeId(currentPeriode.id) : 'Tidak ada periode aktif'}
-            </CardDescription>
+            <CardTitle className="text-sm font-medium">Total RAB Diterima</CardTitle>
           </CardHeader>
           <CardContent>
-            {recentLPJ.length > 0 ? (
-              <div className="space-y-4">
-                {recentLPJ.map((lpj) => (
-                  <div key={lpj.id} className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">{lpj.pondok.name}</p>
-                      <div className="flex items-center mt-1">
-                        <div className={`w-2 h-2 rounded-full mr-2 ${
-                          lpj.status === 'diajukan' ? 'bg-status-diajukan' : 
-                          lpj.status === 'revisi' ? 'bg-status-revisi' : 'bg-status-diterima'
-                        }`}></div>
-                        <p className="text-sm text-muted-foreground">
-                          {lpj.status === 'diajukan' ? 'Diajukan' : 
-                          lpj.status === 'revisi' ? 'Perlu Revisi' : 'Diterima'}
-                        </p>
-                      </div>
-                    </div>
-                    <Link to={`/admin-pusat/lpj/${lpj.id}`}>
-                      <Button size="sm" variant="outline">
-                        <FilePenLine className="h-4 w-4 mr-1" />
-                        Review
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="Belum Ada LPJ"
-                description="Belum ada pengajuan LPJ pada periode ini"
-                icon={<FilePenLine className="h-12 w-12 text-muted-foreground" />}
-              />
-            )}
+            <div className="text-2xl font-bold">{rabStats.diterima}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total LPJ Diajukan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{lpjStats.diajukan}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total LPJ Diterima</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{lpjStats.diterima}</div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total RAB</CardTitle>
+            <CardDescription>Periode: {currentPeriode.month}/{currentPeriode.year}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{formatCurrency(rabStats.total)}</div>
+            <div className="mt-4">
+              <Link to="/admin-pusat/rab">
+                <Button variant="outline">Kelola RAB</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Realisasi (LPJ)</CardTitle>
+            <CardDescription>Periode: {currentPeriode.month}/{currentPeriode.year}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{formatCurrency(lpjStats.total)}</div>
+            <div className="mt-4">
+              <Link to="/admin-pusat/lpj">
+                <Button variant="outline">Kelola LPJ</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Submissions Tabs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Pengajuan Terbaru</CardTitle>
+          <CardDescription>Daftar pengajuan RAB dan LPJ terbaru</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="rab">RAB</TabsTrigger>
+              <TabsTrigger value="lpj">LPJ</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="rab" className="mt-4">
+              {rabs.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">Belum ada pengajuan RAB</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Pondok</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rabs.slice(0, 5).map((rab) => (
+                      <TableRow key={rab.id}>
+                        <TableCell>{rab.pondok?.name || '-'}</TableCell>
+                        <TableCell><StatusBadge status={rab.status} /></TableCell>
+                        <TableCell>{formatCurrency(rab.total_pengeluaran)}</TableCell>
+                        <TableCell className="text-right">
+                          <Link to={`/admin-pusat/rab/${rab.id}`}>
+                            <Button variant="outline" size="sm">Detail</Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+              
+              <div className="mt-4 text-center">
+                <Link to="/admin-pusat/rab">
+                  <Button variant="link">Lihat Semua</Button>
+                </Link>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="lpj" className="mt-4">
+              {lpjs.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">Belum ada pengajuan LPJ</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Pondok</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lpjs.slice(0, 5).map((lpj) => (
+                      <TableRow key={lpj.id}>
+                        <TableCell>{lpj.pondok?.name || '-'}</TableCell>
+                        <TableCell><StatusBadge status={lpj.status} /></TableCell>
+                        <TableCell>{formatCurrency(lpj.total_pengeluaran)}</TableCell>
+                        <TableCell className="text-right">
+                          <Link to={`/admin-pusat/lpj/${lpj.id}`}>
+                            <Button variant="outline" size="sm">Detail</Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+              
+              <div className="mt-4 text-center">
+                <Link to="/admin-pusat/lpj">
+                  <Button variant="link">Lihat Semua</Button>
+                </Link>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default AdminPusatDashboard;

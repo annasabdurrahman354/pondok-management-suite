@@ -9,6 +9,23 @@ import AdminPondokDashboard from "./pages/admin-pondok/Dashboard";
 import { useAuth } from "./contexts/AuthContext";
 import { ReactNode } from "react";
 
+// Branch Admin Pages
+import BranchProfilePage from "./pages/admin-pondok/profile/BranchProfilePage";
+import BranchPersonnelPage from "./pages/admin-pondok/profile/BranchPersonnelPage";
+import RABListPage from "./pages/admin-pondok/rab/RABListPage";
+import RABFormPage from "./pages/admin-pondok/rab/RABFormPage";
+import LPJListPage from "./pages/admin-pondok/lpj/LPJListPage";
+import LPJFormPage from "./pages/admin-pondok/lpj/LPJFormPage";
+
+// Central Admin Pages
+import CentralRABManagementPage from "./pages/admin-pusat/rab/RABManagementPage";
+import CentralLPJManagementPage from "./pages/admin-pusat/lpj/LPJManagementPage";
+import CentralRABDetailPage from "./pages/admin-pusat/rab/RABDetailPage";
+import CentralLPJDetailPage from "./pages/admin-pusat/lpj/LPJDetailPage";
+import PeriodManagementPage from "./pages/admin-pusat/management/PeriodManagementPage";
+import BranchManagementPage from "./pages/admin-pusat/management/BranchManagementPage";
+import BranchDetailPage from "./pages/admin-pusat/management/BranchDetailPage";
+
 // Auth middleware
 interface PrivateRouteProps {
   children: ReactNode;
@@ -67,7 +84,35 @@ export function getRoutes(): RouteObject[] {
           path: "dashboard",
           element: <AdminPusatDashboard />,
         },
-        // Add more routes for RAB, LPJ, etc.
+        // RAB management routes
+        {
+          path: "rab",
+          children: [
+            { index: true, element: <CentralRABManagementPage /> },
+            { path: ":id", element: <CentralRABDetailPage /> }
+          ]
+        },
+        // LPJ management routes
+        {
+          path: "lpj",
+          children: [
+            { index: true, element: <CentralLPJManagementPage /> },
+            { path: ":id", element: <CentralLPJDetailPage /> }
+          ]
+        },
+        // Period management
+        {
+          path: "management/periode",
+          element: <PeriodManagementPage />
+        },
+        // Branch management
+        {
+          path: "management/pondok",
+          children: [
+            { index: true, element: <BranchManagementPage /> },
+            { path: ":id", element: <BranchDetailPage /> }
+          ]
+        }
       ],
     },
     
@@ -88,7 +133,32 @@ export function getRoutes(): RouteObject[] {
           path: "dashboard",
           element: <AdminPondokDashboard />,
         },
-        // Add more routes for RAB, LPJ, etc.
+        // Branch profile management
+        {
+          path: "profile",
+          children: [
+            { index: true, element: <BranchProfilePage /> },
+            { path: "personnel", element: <BranchPersonnelPage /> }
+          ]
+        },
+        // RAB routes
+        {
+          path: "rab",
+          children: [
+            { index: true, element: <RABListPage /> },
+            { path: "new", element: <RABFormPage /> },
+            { path: ":id", element: <RABFormPage /> }
+          ]
+        },
+        // LPJ routes
+        {
+          path: "lpj",
+          children: [
+            { index: true, element: <LPJListPage /> },
+            { path: "new", element: <LPJFormPage /> },
+            { path: ":id", element: <LPJFormPage /> }
+          ]
+        }
       ],
     },
     

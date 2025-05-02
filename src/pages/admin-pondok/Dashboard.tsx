@@ -1,256 +1,220 @@
 
 import { useEffect, useState } from 'react';
-import { DashboardStats } from '@/components/admin-pondok/dashboard/DashboardStats';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { FileText, FileClock, AlertCircle, CheckCircle } from 'lucide-react';
-import { usePeriode } from '@/contexts/PeriodeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePeriode } from '@/contexts/PeriodeContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { formatDateTime } from '@/utils/date-formatter';
+import { formatCurrency } from '@/utils/currency-formatter';
 import { getPondokById } from '@/services/pondok.service';
 import { getRABByPondokAndPeriode } from '@/services/rab.service';
 import { getLPJByPondokAndPeriode } from '@/services/lpj.service';
-import { StatusType } from '@/types/rab.types';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Link } from 'react-router-dom';
+import { Pondok } from '@/types/pondok.types';
+import { RAB } from '@/types/rab.types';
+import { LPJ } from '@/types/lpj.types';
+import { EmptyState } from '@/components/common/EmptyState';
+import { StatusBadge } from '@/components/common/StatusBadge';
 
-export default function Dashboard() {
-  const { currentPeriode, isRABSubmissionTime, isLPJSubmissionTime } = usePeriode();
+const AdminPondokDashboard = () => {
   const { user } = useAuth();
+  const { currentPeriode, isRABSubmissionTime, isLPJSubmissionTime, loading: periodeLoading } = usePeriode();
+  const [pondok, setPondok] = useState<Pondok | null>(null);
+  const [rab, setRAB] = useState<RAB | null>(null);
+  const [lpj, setLPJ] = useState<LPJ | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pondokName, setPondokName] = useState('');
-  const [rabStatus, setRabStatus] = useState<'belum' | StatusType>('belum');
-  const [lpjStatus, setLpjStatus] = useState<'belum' | StatusType>('belum');
-  const [rabAmount, setRabAmount] = useState(0);
-  const [lpjAmount, setLpjAmount] = useState(0);
-  const [isDataCompleted, setIsDataCompleted] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.pondok_id || !currentPeriode) {
-        setLoading(false);
-        return;
-      }
-
+    const loadData = async () => {
+      if (!user?.pondok_id || !currentPeriode) return;
+      
+      setLoading(true);
       try {
-        const [pondok, rab, lpj] = await Promise.all([
+        const [pondokData, rabData, lpjData] = await Promise.all([
           getPondokById(user.pondok_id),
           getRABByPondokAndPeriode(user.pondok_id, currentPeriode.id),
           getLPJByPondokAndPeriode(user.pondok_id, currentPeriode.id)
         ]);
-
-        if (pondok) {
-          setPondokName(pondok.name);
-          
-          // Check if data is complete
-          setIsDataCompleted(
-            pondok.accepted_at !== null && 
-            !!pondok.provinsi_id && 
-            !!pondok.kota_id && 
-            !!pondok.address
-          );
-        }
-
-        if (rab) {
-          setRabStatus(rab.status);
-          setRabAmount(rab.total_pemasukan);
-        }
-
-        if (lpj) {
-          setLpjStatus(lpj.status);
-          setLpjAmount(lpj.total_pemasukan);
-        }
+        
+        setPondok(pondokData);
+        setRAB(rabData);
+        setLPJ(lpjData);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error('Error loading dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    if (user?.pondok_id && currentPeriode) {
+      loadData();
+    }
   }, [user, currentPeriode]);
 
-  if (loading) {
-    return <div className="text-center py-8">Loading...</div>;
+  if (periodeLoading || loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-pondok" />
+      </div>
+    );
+  }
+
+  if (!currentPeriode) {
+    return (
+      <EmptyState 
+        title="Tidak ada periode aktif"
+        description="Hubungi Admin Pusat untuk informasi lebih lanjut."
+        icon={AlertCircle}
+      />
+    );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Dashboard Pondok</h1>
-      
-      {!isDataCompleted && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Data Pondok Belum Lengkap</AlertTitle>
-          <AlertDescription>
-            Silakan lengkapi data pondok Anda terlebih dahulu.
-            <Link to="/admin-pondok/account/pondok-sync">
-              <Button variant="link" className="p-0 h-auto ml-2">
-                Lengkapi Data
-              </Button>
-            </Link>
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <DashboardStats 
-        pondokName={pondokName}
-        currentPeriode={currentPeriode}
-        rabStatus={rabStatus}
-        lpjStatus={lpjStatus}
-        rabAmount={rabAmount}
-        lpjAmount={lpjAmount}
-      />
-      
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="border rounded-lg p-6 bg-white shadow-sm">
-          <div className="flex items-center mb-4">
-            <FileText className="h-6 w-6 text-pondok mr-2" />
-            <h2 className="text-xl font-semibold">Rencana Anggaran Biaya</h2>
-          </div>
-          
-          {rabStatus === 'belum' ? (
-            <div className="space-y-4">
-              <p className="text-muted-foreground">
-                Anda belum mengajukan RAB untuk periode ini.
-              </p>
-              <Link to="/admin-pondok/rab/create">
-                <Button disabled={!isRABSubmissionTime || !isDataCompleted}>
-                  Buat RAB
-                </Button>
-              </Link>
-              {!isRABSubmissionTime && (
-                <div className="flex items-center text-sm text-muted-foreground mt-2">
-                  <AlertCircle className="h-4 w-4 mr-1" />
-                  Periode pengajuan RAB belum dimulai atau sudah selesai.
-                </div>
-              )}
-            </div>
-          ) : rabStatus === 'revisi' ? (
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <AlertCircle className="h-5 w-5 text-status-revisi shrink-0 mt-0.5 mr-2" />
-                <div>
-                  <p className="font-medium">RAB Perlu Direvisi</p>
-                  <p className="text-muted-foreground text-sm">
-                    RAB Anda perlu direvisi. Silakan periksa detail RAB.
-                  </p>
-                </div>
-              </div>
-              <Link to="/admin-pondok/rab">
-                <Button>Lihat Detail</Button>
-              </Link>
-            </div>
-          ) : rabStatus === 'diterima' ? (
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-status-diterima shrink-0 mt-0.5 mr-2" />
-                <div>
-                  <p className="font-medium">RAB Diterima</p>
-                  <p className="text-muted-foreground text-sm">
-                    RAB Anda untuk periode ini telah disetujui.
-                  </p>
-                </div>
-              </div>
-              <Link to="/admin-pondok/rab">
-                <Button variant="outline">Lihat Detail</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <AlertCircle className="h-5 w-5 text-status-diajukan shrink-0 mt-0.5 mr-2" />
-                <div>
-                  <p className="font-medium">RAB Sedang Diajukan</p>
-                  <p className="text-muted-foreground text-sm">
-                    RAB Anda sedang dalam proses review.
-                  </p>
-                </div>
-              </div>
-              <Link to="/admin-pondok/rab">
-                <Button variant="outline">Lihat Detail</Button>
-              </Link>
-            </div>
-          )}
-        </div>
-
-        <div className="border rounded-lg p-6 bg-white shadow-sm">
-          <div className="flex items-center mb-4">
-            <FileClock className="h-6 w-6 text-pondok mr-2" />
-            <h2 className="text-xl font-semibold">Laporan Pertanggungjawaban</h2>
-          </div>
-          
-          {lpjStatus === 'belum' ? (
-            <div className="space-y-4">
-              <p className="text-muted-foreground">
-                Anda belum mengajukan LPJ untuk periode ini.
-              </p>
-              <Link to="/admin-pondok/lpj/create">
-                <Button 
-                  disabled={!isLPJSubmissionTime || !isDataCompleted || rabStatus !== 'diterima'}
-                >
-                  Buat LPJ
-                </Button>
-              </Link>
-              {!isLPJSubmissionTime && (
-                <div className="flex items-center text-sm text-muted-foreground mt-2">
-                  <AlertCircle className="h-4 w-4 mr-1" />
-                  Periode pengajuan LPJ belum dimulai atau sudah selesai.
-                </div>
-              )}
-              {rabStatus !== 'diterima' && (
-                <div className="flex items-center text-sm text-muted-foreground mt-2">
-                  <AlertCircle className="h-4 w-4 mr-1" />
-                  RAB harus disetujui terlebih dahulu sebelum membuat LPJ.
-                </div>
-              )}
-            </div>
-          ) : lpjStatus === 'revisi' ? (
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <AlertCircle className="h-5 w-5 text-status-revisi shrink-0 mt-0.5 mr-2" />
-                <div>
-                  <p className="font-medium">LPJ Perlu Direvisi</p>
-                  <p className="text-muted-foreground text-sm">
-                    LPJ Anda perlu direvisi. Silakan periksa detail LPJ.
-                  </p>
-                </div>
-              </div>
-              <Link to="/admin-pondok/lpj">
-                <Button>Lihat Detail</Button>
-              </Link>
-            </div>
-          ) : lpjStatus === 'diterima' ? (
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-status-diterima shrink-0 mt-0.5 mr-2" />
-                <div>
-                  <p className="font-medium">LPJ Diterima</p>
-                  <p className="text-muted-foreground text-sm">
-                    LPJ Anda untuk periode ini telah disetujui.
-                  </p>
-                </div>
-              </div>
-              <Link to="/admin-pondok/lpj">
-                <Button variant="outline">Lihat Detail</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <AlertCircle className="h-5 w-5 text-status-diajukan shrink-0 mt-0.5 mr-2" />
-                <div>
-                  <p className="font-medium">LPJ Sedang Diajukan</p>
-                  <p className="text-muted-foreground text-sm">
-                    LPJ Anda sedang dalam proses review.
-                  </p>
-                </div>
-              </div>
-              <Link to="/admin-pondok/lpj">
-                <Button variant="outline">Lihat Detail</Button>
-              </Link>
-            </div>
-          )}
-        </div>
+      {/* Welcome Message */}
+      <div>
+        <h1 className="text-2xl font-bold">Selamat Datang{pondok ? `, ${pondok.name}` : ''}</h1>
+        <p className="text-muted-foreground">
+          Periode aktif: {currentPeriode.month}/{currentPeriode.year}
+        </p>
       </div>
+
+      {/* RAB & LPJ Status */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* RAB Status Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>RAB Status</CardTitle>
+            <CardDescription>
+              Periode: {currentPeriode.month}/{currentPeriode.year}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {rab ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span>Status:</span>
+                  <StatusBadge status={rab.status} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Tanggal Pengajuan:</span>
+                  <span>{rab.submit_at ? formatDateTime(rab.submit_at) : '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Total Anggaran:</span>
+                  <span className="font-medium">{formatCurrency(rab.total_pengeluaran)}</span>
+                </div>
+                
+                <div className="pt-2">
+                  <Link to={`/admin-pondok/rab/${rab.id}`}>
+                    <Button variant="outline" className="w-full">Lihat Detail</Button>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p>Belum ada pengajuan RAB untuk periode ini.</p>
+                {isRABSubmissionTime ? (
+                  <Link to="/admin-pondok/rab/new">
+                    <Button className="w-full">Buat RAB</Button>
+                  </Link>
+                ) : (
+                  <Alert variant="default">
+                    <AlertDescription>
+                      Pengajuan RAB tidak dalam periode yang diizinkan.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* LPJ Status Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>LPJ Status</CardTitle>
+            <CardDescription>
+              Periode: {currentPeriode.month}/{currentPeriode.year}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {lpj ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span>Status:</span>
+                  <StatusBadge status={lpj.status} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Tanggal Pengajuan:</span>
+                  <span>{lpj.submit_at ? formatDateTime(lpj.submit_at) : '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Total Realisasi:</span>
+                  <span className="font-medium">{formatCurrency(lpj.total_pengeluaran)}</span>
+                </div>
+                
+                <div className="pt-2">
+                  <Link to={`/admin-pondok/lpj/${lpj.id}`}>
+                    <Button variant="outline" className="w-full">Lihat Detail</Button>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p>Belum ada pengajuan LPJ untuk periode ini.</p>
+                {isLPJSubmissionTime ? (
+                  rab && rab.status === 'diterima' ? (
+                    <Link to="/admin-pondok/lpj/new">
+                      <Button className="w-full">Buat LPJ</Button>
+                    </Link>
+                  ) : (
+                    <Alert variant="default">
+                      <AlertDescription>
+                        RAB harus disetujui sebelum dapat mengajukan LPJ.
+                      </AlertDescription>
+                    </Alert>
+                  )
+                ) : (
+                  <Alert variant="default">
+                    <AlertDescription>
+                      Pengajuan LPJ tidak dalam periode yang diizinkan.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Financial Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Ringkasan Keuangan</CardTitle>
+          <CardDescription>Periode: {currentPeriode.month}/{currentPeriode.year}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="bg-green-50 p-4 rounded-lg">
+              <p className="text-sm font-medium text-green-800">Saldo Awal</p>
+              <p className="text-2xl font-bold text-green-800">{formatCurrency(rab?.saldo_awal || 0)}</p>
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-sm font-medium text-blue-800">Pemasukan</p>
+              <p className="text-2xl font-bold text-blue-800">{formatCurrency(rab?.total_pemasukan || 0)}</p>
+            </div>
+            <div className="bg-red-50 p-4 rounded-lg">
+              <p className="text-sm font-medium text-red-800">Pengeluaran</p>
+              <p className="text-2xl font-bold text-red-800">{formatCurrency(lpj?.total_pengeluaran || rab?.total_pengeluaran || 0)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default AdminPondokDashboard;
