@@ -13,18 +13,18 @@ import {
   FormLabel, 
   FormMessage
 } from '@/components/ui/form';
-import { loginSchema } from '@/utils/validators';
+import { loginFormSchema } from '@/utils/validators';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export function LoginForm() {
   const { login, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   
   const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginFormSchema),
     defaultValues: {
       email: '',
       password: '',

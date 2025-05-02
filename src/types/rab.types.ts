@@ -1,6 +1,12 @@
 
 export type StatusType = 'diajukan' | 'revisi' | 'diterima';
 
+export const STATUS_LABELS: Record<StatusType, string> = {
+  'diajukan': 'Diajukan',
+  'revisi': 'Revisi',
+  'diterima': 'Diterima'
+};
+
 export interface RAB {
   id: string;
   pondok_id: string;
