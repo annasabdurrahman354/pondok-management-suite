@@ -66,3 +66,11 @@ export function formatRelativeTime(dateStr: string | null | undefined): string {
     return dateStr;
   }
 }
+
+// Format periode ID
+export function formatPeriodeId(periodeId: string | null | undefined): string {
+  if (!periodeId) return '-';
+  const year = periodeId.substring(0, 4);
+  const month = periodeId.substring(4, 6);
+  return `${month}/${year}`;
+}
