@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -184,7 +183,7 @@ const LPJDetailPage = () => {
       </div>
 
       {lpj.status === 'revisi' && lpj.pesan_revisi && (
-        <Alert variant="warning" className="bg-amber-50 border-amber-200">
+        <Alert variant="default" className="bg-amber-50 border-amber-200">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             <div className="font-medium mb-1">Catatan Revisi:</div>

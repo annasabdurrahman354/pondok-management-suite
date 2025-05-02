@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -13,10 +12,10 @@ import { getPengurusByPondokId, createPengurus, updatePengurus, deletePengurus }
 import { Link } from 'react-router-dom';
 import { Pengurus, PengurusFormData } from '@/types/pengurus.types';
 
-const defaultFormData: PengurusFormData = {
+const defaultValues = {
   name: '',
   phone: '',
-  jabatan: '',
+  jabatan: 'ketua_pondok' as JabatanType
 };
 
 const BranchPersonnelPage = () => {
@@ -25,7 +24,7 @@ const BranchPersonnelPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [personnel, setPersonnel] = useState<Pengurus[]>([]);
-  const [formData, setFormData] = useState<PengurusFormData>(defaultFormData);
+  const [formData, setFormData] = useState<PengurusFormData>(defaultValues);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -80,7 +79,7 @@ const BranchPersonnelPage = () => {
       }
       
       // Reset and close the dialog
-      setFormData(defaultFormData);
+      setFormData(defaultValues);
       setEditingId(null);
       setIsDialogOpen(false);
       
@@ -160,7 +159,7 @@ const BranchPersonnelPage = () => {
               <DialogTrigger asChild>
                 <Button onClick={() => {
                   setEditingId(null);
-                  setFormData(defaultFormData);
+                  setFormData(defaultValues);
                 }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Tambah Pengurus

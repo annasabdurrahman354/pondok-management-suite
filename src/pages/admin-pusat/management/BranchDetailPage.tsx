@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -168,9 +167,16 @@ const BranchDetailPage = () => {
     try {
       setSubmitting(true);
       
+      // Ensure all required fields are present
+      const pengurusData = {
+        name: values.name,
+        phone: values.phone || '',
+        jabatan: values.jabatan
+      };
+      
       if (currentPengurus) {
         // Update existing pengurus
-        const updated = await updatePengurus(currentPengurus.id, values);
+        const updated = await updatePengurus(currentPengurus.id, pengurusData);
         setPengurusList(pengurusList.map(p => 
           p.id === currentPengurus.id ? updated : p
         ));
@@ -180,7 +186,7 @@ const BranchDetailPage = () => {
         });
       } else {
         // Create new pengurus
-        const newPengurus = await createPengurus(id, values);
+        const newPengurus = await createPengurus(id, pengurusData);
         setPengurusList([...pengurusList, newPengurus]);
         toast({
           title: "Berhasil",

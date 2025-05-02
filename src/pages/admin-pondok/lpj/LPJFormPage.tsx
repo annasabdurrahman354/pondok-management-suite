@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -165,14 +164,23 @@ const LPJFormPage = () => {
     try {
       setSaving(true);
       
+      // Ensure all required fields exist
+      const formData: FormValues = {
+        saldo_awal: values.saldo_awal,
+        total_pemasukan: values.total_pemasukan,
+        total_pengeluaran: values.total_pengeluaran,
+        sisa_saldo: values.sisa_saldo,
+        bukti_url: values.bukti_url || ''
+      };
+      
       if (isEditing && id) {
-        await updateLPJ(id, values);
+        await updateLPJ(id, formData);
         toast({
           title: "Berhasil",
           description: "LPJ berhasil diperbarui"
         });
       } else {
-        const result = await createLPJ(user.pondok_id, currentPeriode.id, values);
+        const result = await createLPJ(user.pondok_id, currentPeriode.id, formData);
         if (result) {
           toast({
             title: "Berhasil",
@@ -204,16 +212,24 @@ const LPJFormPage = () => {
     }
     
     try {
+      // Ensure all required fields exist
+      const itemData: ItemFormValues = {
+        kategori: values.kategori,
+        deskripsi: values.deskripsi,
+        anggaran: values.anggaran,
+        realisasi: values.realisasi
+      };
+      
       if (currentItem) {
         // Update existing item
-        await updateLPJItem(currentItem.id, values);
+        await updateLPJItem(currentItem.id, itemData);
         setItems(items.map(item => 
-          item.id === currentItem.id ? { ...item, ...values } : item
+          item.id === currentItem.id ? { ...item, ...itemData } : item
         ));
         toast({ title: "Item berhasil diperbarui" });
       } else {
         // Add new item
-        const newItem = await createLPJItem(id, values);
+        const newItem = await createLPJItem(id, itemData);
         if (newItem) {
           setItems([...items, newItem]);
           toast({ title: "Item berhasil ditambahkan" });
