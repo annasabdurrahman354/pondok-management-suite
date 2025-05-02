@@ -13,10 +13,7 @@ export interface RAB {
   total_pengeluaran: number;
   bukti_url: string | null;
   pesan_revisi: string | null;
-}
-
-export interface RABWithPondok extends RAB {
-  pondok: {
+  pondok?: {
     name: string;
   };
 }
@@ -25,11 +22,24 @@ export interface RABFormData {
   saldo_awal: number;
   total_pemasukan: number;
   total_pengeluaran: number;
-  bukti_file?: File;
+  bukti_url?: string;
 }
 
-export const STATUS_LABELS: Record<StatusType, string> = {
-  diajukan: 'Diajukan',
-  revisi: 'Perlu Revisi',
-  diterima: 'Diterima'
-};
+export interface RABItem {
+  id: string;
+  rab_id: string;
+  kategori: string;
+  deskripsi: string;
+  jumlah: number;
+  created_at: string;
+}
+
+export interface RABItemFormData {
+  kategori: string;
+  deskripsi: string;
+  jumlah: number;
+}
+
+export interface RABRevisionData {
+  pesan_revisi: string;
+}

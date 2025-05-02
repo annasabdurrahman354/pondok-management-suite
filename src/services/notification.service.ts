@@ -1,14 +1,13 @@
 
 import { supabase } from '../lib/supabase';
-import { Notification } from '../types/notification.types';
+import { Notification, NotificationType } from '../types/notification.types';
 
-export async function getNotifications(userId: string): Promise<Notification[]> {
+export async function getNotificationsByUser(userId: string): Promise<Notification[]> {
   const { data, error } = await supabase
     .from('notifikasi')
     .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(50);
+    .order('created_at', { ascending: false });
   
   if (error) {
     console.error("Error fetching notifications:", error);
@@ -21,12 +20,12 @@ export async function getNotifications(userId: string): Promise<Notification[]> 
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   const { count, error } = await supabase
     .from('notifikasi')
-    .select('id', { count: 'exact', head: true })
+    .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('is_read', false);
   
   if (error) {
-    console.error("Error counting unread notifications:", error);
+    console.error("Error fetching unread notification count:", error);
     return 0;
   }
   
@@ -63,12 +62,12 @@ export async function markAllNotificationsAsRead(userId: string): Promise<boolea
 }
 
 export async function createNotification(
-  userId: string, 
-  message: string, 
-  type: 'pondok' | 'rab' | 'lpj', 
+  userId: string,
+  message: string,
+  type: NotificationType,
   entityId?: string
-): Promise<Notification | null> {
-  const { data, error } = await supabase
+): Promise<boolean> {
+  const { error } = await supabase
     .from('notifikasi')
     .insert({
       user_id: userId,
@@ -76,14 +75,12 @@ export async function createNotification(
       type,
       entity_id: entityId || null,
       is_read: false
-    })
-    .select()
-    .single();
+    });
   
   if (error) {
     console.error("Error creating notification:", error);
-    return null;
+    return false;
   }
   
-  return data;
+  return true;
 }

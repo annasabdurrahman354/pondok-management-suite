@@ -14,23 +14,42 @@ export interface Pondok {
   accepted_at: string | null;
 }
 
-export interface PondokWithCount extends Pondok {
-  pengurus_count: number;
-}
-
 export interface PondokFormData {
   name: string;
-  phone: string;
-  address: string;
-  provinsi_id: number;
-  kota_id: number;
-  kecamatan_id: number;
-  kelurahan_id: number;
-  kode_pos: string;
-  daerah_sambung_id: number;
+  phone: string | null;
+  address: string | null;
+  provinsi_id: number | null;
+  kota_id: number | null;
+  kecamatan_id: number | null;
+  kelurahan_id: number | null;
+  kode_pos: string | null;
+  daerah_sambung_id: number | null;
 }
 
-export interface LocationData {
+export interface Provinsi {
+  id: number;
+  name: string;
+}
+
+export interface Kota {
+  id: number;
+  provinsi_id: number;
+  name: string;
+}
+
+export interface Kecamatan {
+  id: number;
+  kota_id: number;
+  name: string;
+}
+
+export interface Kelurahan {
+  id: number;
+  kecamatan_id: number;
+  name: string;
+}
+
+export interface DaerahSambung {
   id: number;
   name: string;
 }

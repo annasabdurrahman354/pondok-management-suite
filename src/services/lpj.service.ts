@@ -1,35 +1,16 @@
 
 import { supabase } from '../lib/supabase';
-import { LPJ, LPJFormData, LPJWithPondok } from '../types/lpj.types';
+import { LPJ, LPJFormData, LPJItem, LPJItemFormData, LPJRevisionData } from '../types/lpj.types';
 
-export async function getLPJsByPeriodeId(periodeId: string): Promise<LPJWithPondok[]> {
+export async function getLPJsByPeriodeId(periodeId: string): Promise<LPJ[]> {
   const { data, error } = await supabase
     .from('lpj')
-    .select(`
-      *,
-      pondok:pondok_id (
-        name
-      )
-    `)
-    .eq('periode_id', periodeId);
+    .select('*, pondok(name)')
+    .eq('periode_id', periodeId)
+    .order('submit_at', { ascending: false });
   
   if (error) {
-    console.error("Error fetching LPJ list:", error);
-    return [];
-  }
-  
-  return data || [];
-}
-
-export async function getLPJsByPondokId(pondokId: string): Promise<LPJ[]> {
-  const { data, error } = await supabase
-    .from('lpj')
-    .select('*')
-    .eq('pondok_id', pondokId)
-    .order('periode_id', { ascending: false });
-  
-  if (error) {
-    console.error("Error fetching LPJ list:", error);
+    console.error("Error fetching LPJs:", error);
     return [];
   }
   
@@ -45,12 +26,10 @@ export async function getLPJByPondokAndPeriode(pondokId: string, periodeId: stri
     .single();
   
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No rows returned
-      return null;
+    if (error.code !== 'PGRST116') { // Not found error
+      console.error("Error fetching LPJ:", error);
     }
-    console.error("Error fetching LPJ:", error);
-    throw new Error(error.message);
+    return null;
   }
   
   return data;
@@ -59,19 +38,19 @@ export async function getLPJByPondokAndPeriode(pondokId: string, periodeId: stri
 export async function getLPJById(id: string): Promise<LPJ | null> {
   const { data, error } = await supabase
     .from('lpj')
-    .select('*')
+    .select('*, pondok(name)')
     .eq('id', id)
     .single();
   
   if (error) {
-    console.error("Error fetching LPJ:", error);
+    console.error("Error fetching LPJ by ID:", error);
     return null;
   }
   
   return data;
 }
 
-export async function createLPJ(pondokId: string, periodeId: string, lpjData: LPJFormData, buktiUrl: string | null): Promise<LPJ | null> {
+export async function createLPJ(pondokId: string, periodeId: string, lpjData: LPJFormData): Promise<LPJ | null> {
   const { data, error } = await supabase
     .from('lpj')
     .insert({
@@ -83,9 +62,9 @@ export async function createLPJ(pondokId: string, periodeId: string, lpjData: LP
       total_pemasukan: lpjData.total_pemasukan,
       total_pengeluaran: lpjData.total_pengeluaran,
       sisa_saldo: lpjData.sisa_saldo,
-      bukti_url: buktiUrl
+      bukti_url: lpjData.bukti_url || null
     })
-    .select()
+    .select('*')
     .single();
   
   if (error) {
@@ -96,22 +75,24 @@ export async function createLPJ(pondokId: string, periodeId: string, lpjData: LP
   return data;
 }
 
-export async function updateLPJStatus(id: string, status: 'revisi' | 'diterima', pesanRevisi?: string): Promise<LPJ | null> {
-  const updates: any = {
-    status,
-  };
+export async function updateLPJStatus(id: string, status: 'diajukan' | 'revisi' | 'diterima', revisionData?: LPJRevisionData): Promise<LPJ | null> {
+  const updateData: any = { status };
   
   if (status === 'diterima') {
-    updates.accepted_at = new Date().toISOString();
-  } else if (status === 'revisi') {
-    updates.pesan_revisi = pesanRevisi;
+    updateData.accepted_at = new Date().toISOString();
+    updateData.pesan_revisi = null; // Clear any previous revision message
+  } else if (status === 'revisi' && revisionData) {
+    updateData.pesan_revisi = revisionData.pesan_revisi;
+  } else if (status === 'diajukan') {
+    updateData.submit_at = new Date().toISOString();
+    updateData.pesan_revisi = null; // Clear any previous revision message
   }
   
   const { data, error } = await supabase
     .from('lpj')
-    .update(updates)
+    .update(updateData)
     .eq('id', id)
-    .select()
+    .select('*')
     .single();
   
   if (error) {
@@ -122,21 +103,21 @@ export async function updateLPJStatus(id: string, status: 'revisi' | 'diterima',
   return data;
 }
 
-export async function updateLPJ(id: string, lpjData: LPJFormData, buktiUrl: string | null): Promise<LPJ | null> {
+export async function updateLPJ(id: string, lpjData: LPJFormData): Promise<LPJ | null> {
   const { data, error } = await supabase
     .from('lpj')
     .update({
-      status: 'diajukan',
-      submit_at: new Date().toISOString(),
       saldo_awal: lpjData.saldo_awal,
       total_pemasukan: lpjData.total_pemasukan,
       total_pengeluaran: lpjData.total_pengeluaran,
       sisa_saldo: lpjData.sisa_saldo,
-      bukti_url: buktiUrl || undefined,
-      pesan_revisi: null
+      bukti_url: lpjData.bukti_url || null,
+      status: 'diajukan', // Reset to diajukan when updated
+      submit_at: new Date().toISOString(),
+      pesan_revisi: null // Clear revision message
     })
     .eq('id', id)
-    .select()
+    .select('*')
     .single();
   
   if (error) {
@@ -145,4 +126,77 @@ export async function updateLPJ(id: string, lpjData: LPJFormData, buktiUrl: stri
   }
   
   return data;
+}
+
+// LPJ Items (Details)
+
+export async function getLPJItems(lpjId: string): Promise<LPJItem[]> {
+  const { data, error } = await supabase
+    .from('lpj_items')
+    .select('*')
+    .eq('lpj_id', lpjId)
+    .order('created_at', { ascending: true });
+  
+  if (error) {
+    console.error("Error fetching LPJ items:", error);
+    return [];
+  }
+  
+  return data || [];
+}
+
+export async function createLPJItem(lpjId: string, itemData: LPJItemFormData): Promise<LPJItem | null> {
+  const { data, error } = await supabase
+    .from('lpj_items')
+    .insert({
+      lpj_id: lpjId,
+      kategori: itemData.kategori,
+      deskripsi: itemData.deskripsi,
+      anggaran: itemData.anggaran,
+      realisasi: itemData.realisasi
+    })
+    .select('*')
+    .single();
+  
+  if (error) {
+    console.error("Error creating LPJ item:", error);
+    throw new Error(error.message);
+  }
+  
+  return data;
+}
+
+export async function updateLPJItem(id: string, itemData: LPJItemFormData): Promise<LPJItem | null> {
+  const { data, error } = await supabase
+    .from('lpj_items')
+    .update({
+      kategori: itemData.kategori,
+      deskripsi: itemData.deskripsi,
+      anggaran: itemData.anggaran,
+      realisasi: itemData.realisasi
+    })
+    .eq('id', id)
+    .select('*')
+    .single();
+  
+  if (error) {
+    console.error("Error updating LPJ item:", error);
+    throw new Error(error.message);
+  }
+  
+  return data;
+}
+
+export async function deleteLPJItem(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('lpj_items')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error("Error deleting LPJ item:", error);
+    throw new Error(error.message);
+  }
+  
+  return true;
 }

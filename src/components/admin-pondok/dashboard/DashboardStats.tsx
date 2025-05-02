@@ -1,6 +1,6 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Periodo, Clock } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency-formatter';
 import { formatPeriodeId } from '@/utils/date-formatter';
 import { formatDate } from '@/utils/date-formatter';
@@ -58,7 +58,7 @@ export function DashboardStats({
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-md flex items-center">
-                <Periodo className="h-4 w-4 mr-2" />
+                <Calendar className="h-4 w-4 mr-2" />
                 Batas Waktu RAB
               </CardTitle>
             </CardHeader>

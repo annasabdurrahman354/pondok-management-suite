@@ -1,105 +1,123 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Notification } from '../types/notification.types';
-import { 
-  getNotifications, 
-  getUnreadNotificationCount, 
-  markNotificationAsRead, 
-  markAllNotificationsAsRead 
-} from '../services/notification.service';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
+import { getNotificationsByUser, getUnreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead } from '../services/notification.service';
+import { Notification } from '../types/notification.types';
 
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
-  isLoading: boolean;
+  loading: boolean;
+  fetchNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
-  refreshNotifications: () => Promise<void>;
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextType>({
+  notifications: [],
+  unreadCount: 0,
+  loading: true,
+  fetchNotifications: async () => {},
+  markAsRead: async () => {},
+  markAllAsRead: async () => {}
+});
 
-export function NotificationProvider({ children }: { children: ReactNode }) {
+export const useNotification = () => useContext(NotificationContext);
+
+export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user, isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      loadNotifications();
-    } else {
-      setNotifications([]);
-      setUnreadCount(0);
+  const fetchNotifications = async () => {
+    if (!isAuthenticated || !user) {
+      setLoading(false);
+      return;
     }
-  }, [isAuthenticated, user]);
 
-  async function loadNotifications() {
-    if (!user) return;
-    
-    setIsLoading(true);
     try {
-      const [notificationsData, count] = await Promise.all([
-        getNotifications(user.id),
+      setLoading(true);
+      
+      // Fetch notifications and unread count
+      const [fetchedNotifications, fetchedUnreadCount] = await Promise.all([
+        getNotificationsByUser(user.id),
         getUnreadNotificationCount(user.id)
       ]);
       
-      setNotifications(notificationsData);
-      setUnreadCount(count);
+      setNotifications(fetchedNotifications);
+      setUnreadCount(fetchedUnreadCount);
     } catch (error) {
-      console.error("Error loading notifications:", error);
+      console.error('Error fetching notifications:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }
+  };
 
-  async function markAsRead(id: string) {
+  const markAsRead = async (id: string) => {
+    if (!isAuthenticated || !user) return;
+
     try {
-      const success = await markNotificationAsRead(id);
-      if (success) {
-        setNotifications(prev => 
-          prev.map(notification => 
-            notification.id === id 
-              ? { ...notification, is_read: true } 
-              : notification
-          )
-        );
-        
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
+      await markNotificationAsRead(id);
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === id 
+            ? { ...notification, is_read: true } 
+            : notification
+        )
+      );
+      
+      // Update unread count
+      const updatedCount = unreadCount - 1;
+      setUnreadCount(updatedCount > 0 ? updatedCount : 0);
     } catch (error) {
-      console.error("Error marking notification as read:", error);
+      console.error('Error marking notification as read:', error);
     }
-  }
+  };
 
-  async function markAllAsRead() {
-    if (!user) return;
+  const markAllAsRead = async () => {
+    if (!isAuthenticated || !user) return;
+
+    try {
+      await markAllNotificationsAsRead(user.id);
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, is_read: true }))
+      );
+      
+      // Reset unread count
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  // Fetch notifications on initial load and when auth state changes
+  useEffect(() => {
+    fetchNotifications();
+  }, [isAuthenticated, user]);
+
+  // Periodic refresh
+  useEffect(() => {
+    if (!isAuthenticated) return;
     
-    try {
-      const success = await markAllNotificationsAsRead(user.id);
-      if (success) {
-        setNotifications(prev => 
-          prev.map(notification => ({ ...notification, is_read: true }))
-        );
-        setUnreadCount(0);
-      }
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-    }
-  }
-
-  async function refreshNotifications() {
-    await loadNotifications();
-  }
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 60000); // Refresh every minute
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const value = {
     notifications,
     unreadCount,
-    isLoading,
+    loading,
+    fetchNotifications,
     markAsRead,
-    markAllAsRead,
-    refreshNotifications
+    markAllAsRead
   };
 
   return (
@@ -107,12 +125,4 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       {children}
     </NotificationContext.Provider>
   );
-}
-
-export function useNotification() {
-  const context = useContext(NotificationContext);
-  if (context === undefined) {
-    throw new Error('useNotification must be used within a NotificationProvider');
-  }
-  return context;
-}
+};

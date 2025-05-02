@@ -77,7 +77,7 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold text-gray-900">Dashboard Pondok</h1>
       
       {!isDataCompleted && (
-        <Alert variant="warning">
+        <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Data Pondok Belum Lengkap</AlertTitle>
           <AlertDescription>
