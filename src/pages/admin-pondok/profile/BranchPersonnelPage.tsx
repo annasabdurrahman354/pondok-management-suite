@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getPengurusByPondokId, createPengurus, updatePengurus, deletePengurus } from '@/services/pengurus.service';
 import { Link } from 'react-router-dom';
-import { Pengurus, PengurusFormData } from '@/types/pengurus.types';
+import { Pengurus, PengurusFormData, JabatanType, JabatanLabels } from '@/types/pengurus.types';
 
 const defaultValues = {
   name: '',

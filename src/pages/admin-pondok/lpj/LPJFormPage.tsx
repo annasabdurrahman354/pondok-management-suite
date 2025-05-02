@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -165,7 +166,7 @@ const LPJFormPage = () => {
       setSaving(true);
       
       // Ensure all required fields exist
-      const formData: FormValues = {
+      const formData = {
         saldo_awal: values.saldo_awal,
         total_pemasukan: values.total_pemasukan,
         total_pengeluaran: values.total_pengeluaran,
@@ -213,7 +214,7 @@ const LPJFormPage = () => {
     
     try {
       // Ensure all required fields exist
-      const itemData: ItemFormValues = {
+      const itemData = {
         kategori: values.kategori,
         deskripsi: values.deskripsi,
         anggaran: values.anggaran,
