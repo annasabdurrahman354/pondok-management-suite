@@ -1,5 +1,11 @@
 
-import { StatusType } from './rab.types';
+export type StatusType = 'diajukan' | 'revisi' | 'diterima';
+
+export const STATUS_LABELS: Record<StatusType, string> = {
+  'diajukan': 'Diajukan',
+  'revisi': 'Revisi',
+  'diterima': 'Diterima'
+};
 
 export interface LPJ {
   id: string;
@@ -24,7 +30,7 @@ export interface LPJFormData {
   total_pemasukan: number;
   total_pengeluaran: number;
   sisa_saldo: number;
-  bukti_url?: string;
+  bukti_url?: string | null;
 }
 
 export interface LPJItem {
@@ -32,8 +38,8 @@ export interface LPJItem {
   lpj_id: string;
   kategori: string;
   deskripsi: string;
-  anggaran: number; // from RAB
-  realisasi: number; // actual spend
+  anggaran: number;
+  realisasi: number;
   created_at: string;
 }
 

@@ -16,6 +16,7 @@ import { getRABById, createRAB, updateRAB, getRABItems, createRABItem, updateRAB
 import { RAB, RABItem, RABFormData, RABItemFormData } from '@/types/rab.types';
 import { formatCurrency } from '@/utils/currency-formatter';
 import { EmptyState } from '@/components/common/EmptyState';
+import FileUpload from '@/components/common/FileUpload';
 
 const RABFormPage = () => {
   const { id } = useParams();
@@ -89,6 +90,11 @@ const RABFormPage = () => {
         ? parseFloat(value) || 0 
         : value 
     }));
+  };
+
+  // Handle file upload
+  const handleFileUploaded = (url: string) => {
+    setFormData(prev => ({ ...prev, bukti_url: url }));
   };
 
   // Handle item form input changes
@@ -267,6 +273,21 @@ const RABFormPage = () => {
     );
   }
 
+  if (!currentPeriode || !isRABSubmissionTime) {
+    return (
+      <EmptyState 
+        title="Periode pengajuan RAB tidak aktif"
+        description={`Periode pengajuan RAB: ${currentPeriode?.rab_start} - ${currentPeriode?.rab_end}`}
+        action={
+          <Button variant="outline" onClick={() => navigate('/admin-pondok/rab')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Kembali
+          </Button>
+        }
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -338,15 +359,18 @@ const RABFormPage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="bukti_url">Bukti Dokumen (Link)</Label>
-                <Input 
-                  id="bukti_url"
-                  name="bukti_url"
-                  type="url"
-                  placeholder="https://..."
-                  value={formData.bukti_url || ''}
-                  onChange={handleChange}
-                />
+                <Label htmlFor="bukti_dokumen">Bukti Dokumen</Label>
+                {user && user.pondok_id && (
+                  <FileUpload
+                    bucketName="rab"
+                    pondokId={user.pondok_id}
+                    pondokName={user.pondok?.name || 'pondok'}
+                    periodeId={currentPeriode.id}
+                    onFileUploaded={handleFileUploaded}
+                    existingFileUrl={formData.bukti_url}
+                    disabled={submitting}
+                  />
+                )}
               </div>
             </CardContent>
           </Card>

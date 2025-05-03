@@ -22,7 +22,8 @@ import { getRABById, getRABItems, updateRABStatus } from '@/services/rab.service
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { formatDateTime } from '@/utils/date-formatter';
 import { formatCurrency } from '@/utils/currency-formatter';
-import { CheckCircle2, XCircle, ArrowLeft, Pencil, AlertCircle, Loader2 } from 'lucide-react';
+import { downloadFile } from '@/services/storage.service';
+import { CheckCircle2, XCircle, ArrowLeft, Pencil, AlertCircle, Loader2, Download } from 'lucide-react';
 
 const revisionSchema = z.object({
   pesan_revisi: z
@@ -133,6 +134,35 @@ const RABDetailPage = () => {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDownloadFile = async (fileUrl: string) => {
+    if (!fileUrl) return;
+    
+    try {
+      // Check if the URL is from Supabase storage
+      if (fileUrl.includes('/storage/v1/object/public/')) {
+        // Extract the bucket name and path
+        const parts = fileUrl.split('/');
+        const bucketIndex = parts.findIndex(part => part === 'public') + 1;
+        if (bucketIndex > 0 && bucketIndex < parts.length) {
+          const bucketName = parts[bucketIndex];
+          const filePath = parts.slice(bucketIndex + 1).join('/');
+          await downloadFile(bucketName, filePath);
+          return;
+        }
+      }
+      
+      // Fallback: Open the URL in a new tab
+      window.open(fileUrl, '_blank');
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat mengunduh file",
+        variant: "destructive"
+      });
     }
   };
 
@@ -249,14 +279,15 @@ const RABDetailPage = () => {
                   <div className="space-y-1 pt-2">
                     <dt className="text-sm font-medium text-muted-foreground">Dokumen Bukti</dt>
                     <dd className="text-base">
-                      <a 
-                        href={rab.bukti_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline"
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadFile(rab.bukti_url as string)}
+                        className="flex items-center"
                       >
-                        Lihat dokumen
-                      </a>
+                        <Download className="mr-2 h-4 w-4" />
+                        Unduh dokumen
+                      </Button>
                     </dd>
                   </div>
                 )}

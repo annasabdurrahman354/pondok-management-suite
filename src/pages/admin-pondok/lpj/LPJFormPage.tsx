@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +28,7 @@ import {
 } from '@/services/lpj.service';
 import { getRABByPondokAndPeriode } from '@/services/rab.service';
 import { formatCurrency } from '@/utils/currency-formatter';
+import FileUpload from '@/components/common/FileUpload';
 
 const formSchema = z.object({
   saldo_awal: z.number().min(0),
@@ -200,6 +200,11 @@ const LPJFormPage = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Handle file upload
+  const handleFileUploaded = (url: string) => {
+    form.setValue('bukti_url', url);
   };
 
   const handleAddItem = async (values: ItemFormValues) => {
@@ -438,12 +443,19 @@ const LPJFormPage = () => {
                     name="bukti_url"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Link Dokumen Bukti</FormLabel>
+                        <FormLabel>Dokumen Bukti</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field}
-                            placeholder="URL dokumen bukti (opsional)" 
-                          />
+                          {user && user.pondok_id && (
+                            <FileUpload
+                              bucketName="lpj"
+                              pondokId={user.pondok_id}
+                              pondokName={user.pondok?.name || 'pondok'}
+                              periodeId={currentPeriode.id}
+                              onFileUploaded={handleFileUploaded}
+                              existingFileUrl={field.value}
+                              disabled={saving}
+                            />
+                          )}
                         </FormControl>
                         <FormMessage />
                       </FormItem>
