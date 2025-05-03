@@ -18,10 +18,14 @@ const Index = () => {
     }
   }, [isLoading, isAuthenticated, user, navigate]);
 
+  // Show a better loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-center text-gray-600">Loading...</p>
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-pondok border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -31,7 +35,6 @@ const Index = () => {
   }
 
   // This return is mostly a fallback - the useEffect should handle redirection
-  // based on user role before we reach this point
   if (user?.role === 'admin_pusat') {
     return <Navigate to="/admin-pusat/dashboard" replace />;
   } else {

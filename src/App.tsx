@@ -11,26 +11,31 @@ import { getRoutes } from "./routes";
 
 const queryClient = new QueryClient();
 
-// Router Component
+// Router Component that uses AuthProvider
 const AppRoutes = () => {
   const routes = useRoutes(getRoutes());
   return routes;
 };
 
+// Wrap AppRoutes with AuthProvider inside BrowserRouter
+const AppWithAuth = () => (
+  <BrowserRouter>
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  </BrowserRouter>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <NotificationProvider>
-          <PeriodeProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </PeriodeProvider>
-        </NotificationProvider>
-      </AuthProvider>
+      <NotificationProvider>
+        <PeriodeProvider>
+          <Toaster />
+          <Sonner />
+          <AppWithAuth />
+        </PeriodeProvider>
+      </NotificationProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
