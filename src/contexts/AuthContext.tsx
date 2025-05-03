@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { User, AuthState, LoginCredentials } from '../types/auth.types';
 import { login as loginAPI, logout as logoutAPI, getCurrentUser } from '../services/auth.service';
 import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         error: null,
       });
     } catch (error) {
+      console.error("Auth check error:", error);
       setAuthState({
         user: null,
         isAuthenticated: false,

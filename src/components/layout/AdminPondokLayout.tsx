@@ -24,7 +24,7 @@ export function AdminPondokLayout({ title }: AdminPondokLayoutProps) {
           onClose={() => setIsSidebarOpen(false)}
           role="admin_pondok"
         />
-        <main className="flex-1 pb-16 md:pb-0 container py-6">
+        <main className="flex-1 pb-16 md:pb-0 container py-6 md:ml-64"> {/* Added md:ml-64 to offset the sidebar width */}
           <Outlet />
         </main>
       </div>

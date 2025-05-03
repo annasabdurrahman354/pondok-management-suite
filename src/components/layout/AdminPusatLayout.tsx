@@ -23,7 +23,7 @@ export function AdminPusatLayout({ title }: AdminPusatLayoutProps) {
           onClose={() => setIsSidebarOpen(false)}
           role="admin_pusat"
         />
-        <main className="flex-1 container py-6">
+        <main className="flex-1 container py-6 md:ml-64"> {/* Added md:ml-64 to offset the sidebar width */}
           <Outlet />
         </main>
       </div>
