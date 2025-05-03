@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,8 +56,8 @@ const RABFormPage = () => {
             setFormData({
               saldo_awal: rabData.saldo_awal || 0,
               total_pemasukan: rabData.total_pemasukan || 0,
-              total_pengeluaran: rabData.total_pengeluaran || 0,
-              bukti_url: rabData.bukti_url
+              bukti_url: rabData.bukti_url,
+              total_pengeluaran: rabData.total_pengeluaran || 0
             });
             
             // Load RAB items

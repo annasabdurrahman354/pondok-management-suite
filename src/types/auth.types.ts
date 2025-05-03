@@ -6,6 +6,9 @@ export interface User {
   role: UserRole;
   pondok_id: string | null;
   created_at: string;
+  pondok?: {
+    name: string;
+  };
 }
 
 export type UserRole = 'admin_pusat' | 'admin_pondok';
